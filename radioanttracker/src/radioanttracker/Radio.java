@@ -390,6 +390,8 @@ public class Radio {
 		}
 		else {
 			band = "GEN";
+			antenna = "1";
+			antLabel = "Inv-L";
 		}
 	return band;
 	}

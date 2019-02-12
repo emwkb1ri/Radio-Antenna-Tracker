@@ -56,7 +56,7 @@ public class DisplayFrame extends JFrame{
 				
 		// Define the title for the frame
 				
-		this.setTitle("Radio Antenna Tracker v2");
+		this.setTitle("Radio Antenna Tracker v3");
 				
 		// The JPanel contains all of the components for your frame
 				

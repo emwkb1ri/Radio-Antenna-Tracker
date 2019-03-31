@@ -91,7 +91,7 @@ public class RadioAntTracker {
 		// String LOCALHOST = "127.0.0.1";
 		// KB1RI-pi1 = 192.168.1.74
 		// port list to send radio info udp packets
-		String hosts[] = {"127.0.0.1", "192.168.1.74"};
+		String hosts[] = {"127.0.0.1", "192.168.1.250"};
     	int ports[][] = {
     			{12060, 13063, 13065},
     			{12060}

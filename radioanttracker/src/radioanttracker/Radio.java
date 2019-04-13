@@ -9,6 +9,7 @@ public class Radio {
 	public String vfoB = "";
 	public String vfoAmode = "";
 	public String vfoBmode = "";
+	public boolean initialized = false;
 	
 	// define the key data items to be accessed from the radio
 	
@@ -57,8 +58,8 @@ public class Radio {
 	private int chosenPort = 0;
 
 	// Radio constructor method
-	Radio(String portname, int baud)
-    {
+	Radio(String portname, int baud) {
+		
     	// set comPort to values passed at time of instantiation
 		comPort = portname;
 		baudRate  = baud;
@@ -101,11 +102,10 @@ public class Radio {
 			System.out.println("Successfully opened the port.");
 			DisplayFrame.appendtext("Successfully opened the port.\n");
 		} 
-		else 
-		{
-		 System.out.println("Unable to open the port.");
-		 DisplayFrame.appendtext("Unable to open the port.\n");
-		 return;	
+		else {
+			System.out.println("Unable to open the port.");
+			DisplayFrame.appendtext("Unable to open the port.\n");
+			return;	
 		}
 		
         // set baudRate = 38400(default), DataBits = 8, StopBits = 1, Parity = None
@@ -123,6 +123,8 @@ public class Radio {
 		System.out.print(id);
 		System.out.println("  " + radioModel);
 		DisplayFrame.appendtext(id + "  " + radioModel + "\n");
+		initialized = true;  // set this radio as initialized
+		return;
         
     } // END OF CONSTRUCTOR
 	

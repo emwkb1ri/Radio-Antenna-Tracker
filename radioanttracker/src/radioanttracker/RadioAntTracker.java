@@ -39,13 +39,133 @@ public class RadioAntTracker {
 	public static String txfreq2 = "";
 	public static String data1 = "";
 	public static String data2 = "";
+	public static boolean r1_Initialized = false;
+	public static boolean r2_Initialized = false;
 	
 	// Instantiate the application window
     public static DisplayFrame frame = new DisplayFrame();
-		
+/*    
+    // instantiate the radio object
+    static String radio1PortName = "COM13";
+	static String radio2PortName = "COM15";
+	static int baudrate = 38400; // default baudrate for now
+	
+	public static Radio radioOne = new Radio(radio1PortName, baudrate);
+
+	public static Radio radioTwo = new Radio(radio2PortName, baudrate);
+*/    		
 	// Instantiate the polling task for the radios
 	// poll every 500 msec
 	public static PollRadiosTask polldata = new PollRadiosTask(500);
+
+	
+	
+	public static void main(String[] args) {
+
+	    // get the execution path to locate the desired configuration file
+		// String configPath = getPath();  
+		String configPath="C:\\Ham\\";  //default path to configuration file
+		
+		// Initialize program configuration information from configuration file
+		String configFilename = "AntennaTracker.cfg"; 
+		String configFile = configPath.concat(configFilename);
+		
+		// Initialize the configuration file information
+		ConfigFile config = new ConfigFile(configPath);
+		
+
+		// configuration file read verification by printing to console
+		
+		System.out.println("********************");
+		
+		System.out.println("Radio1: " + config.radio1ModelNumber + "," + config.radio1ModelName + "," + config.radio1PortName + "," + config.radio1Baudrate);
+		System.out.println("Radio2: " + config.radio2ModelNumber + "," + config.radio2ModelName + "," + config.radio2PortName + "," + config.radio2Baudrate);
+		System.out.print("AMP: " + config.speAmpModelName + "," + config.speAmpPortName + "," + config.speAmpBaudrate);
+		System.out.print("," + config.speAmpCATPort1 + "," + config.speAmpCATBaudrate1);
+		System.out.println("," + config.speAmpCATPort2 + "," + config.speAmpCATBaudrate2);
+		
+		System.out.println("HostList: " + config.broadcastList);
+		
+		System.out.println("Switch #1 IP: " + config.switch1IP);
+		System.out.println("Switch #2 IP: " + config.switch2IP);
+
+		System.out.println("Radio 1 AntList: " + config.antLabelListR1);
+		System.out.println("Radio 2 AntList: " + config.antLabelListR2);
+		
+		System.out.println("R1 Last = " + config.lastAntSelectR1);
+		System.out.println("R2 Last = " + config.lastAntSelectR2);
+		
+		System.out.println("********************");
+		
+		// create a window with text field
+
+		System.out.println("Running....");
+		DisplayFrame.appendtext("Running....\n");
+		
+		// delay starting the main loop to allow for the radio
+		// communication ports to be opened and initial data collected
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  // sleep for a little bit
+
+		int msec = 100; // band change poll interval in milliseconds
+		int d = 30000; // regular udp update interval in milliseconds regardless of band change
+		int i = d/msec; // udp band check loops before forcing a udp update
+		
+		while (true ) {	
+			
+			// radio data change flags - true if data is same as last poll
+			boolean r1 = data1.equals(polldata.getradio1data());
+			boolean r2 = data2.equals(polldata.getradio2data());
+			boolean b1 = txband1.equals(polldata.getradio1txband());
+			boolean b2 = txband2.equals(polldata.getradio2txband());
+			boolean b3 = txfreq1.equals(polldata.getradio1txfreq());
+			boolean b4 = txfreq2.equals(polldata.getradio2txfreq());
+
+			// System.out.println(b1 + " " + b2);
+						
+			if (frame.runFlag && !DisplayFrame.swapflag) {
+				// if the runflag and swapflag are true
+				// then if either radio data has changed since last poll
+
+				if (!r1 || !r2 || ( i== 0)) {
+					
+					// send udp packets to antenna controller
+					
+					udpupdate();
+					
+					i = d/msec; // reset the loop counter
+					
+				}
+				else {
+					// delay a little bit before checking for a band change
+				
+					try {
+						Thread.sleep(msec);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}  // sleep for a little bit
+					
+					i--; // decrement udp loop counter
+				}
+			}
+			else {
+				i = 0;  // force a udp packet update after a pause
+				// now delay for 500 milliseconds before checking button status
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}  // sleep for a little bit	
+			}		
+		}
+	} // end of main()
+	
 	
 	public static void udpupdate() {
 		// This method is run only when radio information changes
@@ -179,78 +299,41 @@ public class RadioAntTracker {
     	System.out.println("--------------------------------------------");
     	DisplayFrame.appendtext("---------------------------------------------------------\n");
 	}
+
 	
+	public static String getPath() {
+		
+		String surroundingJar = null;
 	
-	public static void main(String[] args)
-	{
-
-		// create a window with text field
-
-		System.out.println("Running....");
-		DisplayFrame.appendtext("Running....\n");
+		// gets the path to the jar file if it exists; or the "bin" directory if calling from Eclipse
+		String jarDir = new File(ClassLoader.getSystemClassLoader().getResource(".").getPath()).getAbsolutePath();
+		System.out.println("JAR Directory: " + jarDir);
 		
-		// delay starting the main loop to allow for the radio
-		// communication ports to be opened and initial data collected
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}  // sleep for a little bit
-
-		int msec = 100; // band change poll interval in milliseconds
-		int d = 30000; // regular udp update interval in milliseconds regardless of band change
-		int i = d/msec; // udp band check loops before forcing a udp update
-		
-		while (true ) {	
-			
-			// radio data change flags - true if data is same as last poll
-			boolean r1 = data1.equals(polldata.getradio1data());
-			boolean r2 = data2.equals(polldata.getradio2data());
-			boolean b1 = txband1.equals(polldata.getradio1txband());
-			boolean b2 = txband2.equals(polldata.getradio2txband());
-			boolean b3 = txfreq1.equals(polldata.getradio1txfreq());
-			boolean b4 = txfreq2.equals(polldata.getradio2txfreq());
-
-			// System.out.println(b1 + " " + b2);
-						
-			if (frame.runFlag && !DisplayFrame.swapflag) {
-				// if the runflag and swapflag are true
-				// then if either radio data has changed since last poll
-
-				if (!r1 || !r2 || ( i== 0)) {
-					
-					// send udp packets to antenna controller
-					
-					udpupdate();
-					
-					i = d/msec; // reset the loop counter
-					
-				}
-				else {
-					// delay a little bit before checking for a band change
-				
-					try {
-						Thread.sleep(msec);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}  // sleep for a little bit
-					
-					i--; // decrement udp loop counter
-				}
-			}
-			else {
-				i = 0;  // force a udp packet update after a pause
-				// now delay for 500 milliseconds before checking button status
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}  // sleep for a little bit	
-			}		
+		// gets the "bin" directory if calling from eclipse or the name of the .jar file alone (without its path)
+		String jarFileFromSys = System.getProperty("java.class.path").split(";")[0];
+	
+		// If both are equal that means it is running from an IDE like Eclipse
+		if (jarFileFromSys.equals(jarDir))
+		{
+		    System.out.println("RUNNING FROM IDE!");
+		    // The path to the jar is the "bin" directory in that case because there is no actual .jar file.
+		    surroundingJar = jarDir;
+		    
+		    // use this fixed path to configuration when executing in an IDE
+		    jarDir = "C:\\Users\\ewpil\\iCloudDrive\\eclipse-workspace\\";
 		}
+		else
+		{
+		    // Combining the path and the name of the .jar file to achieve the final result
+			jarDir = jarDir + "\\";
+			surroundingJar = jarDir + jarFileFromSys;
+		}
+	
+		System.out.println("JAR File: " + surroundingJar);
+		System.out.println("JAR from Sys: " + jarFileFromSys);
+		System.out.println("jarDir: " + jarDir);
+		
+		return jarDir; 
 	}
-}
+} // end of RadioAntTracker class
 

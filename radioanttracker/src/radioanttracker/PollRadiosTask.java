@@ -34,6 +34,7 @@ class PollRadiosTask {
 	String radio2PortName = "COM15";
 	int baudrate = 38400; // default baudrate for now
 	
+	
     // instantiate the radio object
 	Radio radioOne = new Radio(radio1PortName, baudrate);
 
@@ -102,79 +103,81 @@ class PollRadiosTask {
 
         	// task to do
         	
-        	// if swapflag not set do a regular radio poll else swap radio data
-        	if (!DisplayFrame.swapflag) { 
-            
-	            // Instantiate a Date object
-	            Date date = new Date();
+        	if (radioOne.initialized && radioOne.initialized) {
+        	
+	        	// if swapflag not set do a regular radio poll else swap radio data
+	        	if (!DisplayFrame.swapflag) { 
 	            
-	        	radio1data = radioOne.getRadioData();
-	        	radio1model = radioOne.getRadioModel();
-	        	radio1txband = radioOne.getTxBand();
-	        	radio1txfreq = radioOne.getTxFreq();
-	        	radio1rxfreq = radioOne.getRxFreq();
-	        	radio1antlabel = radioOne.getAntLabel();
-	 
-	        	/*
-	        	String mhz = radio1txfreq.substring(0, radio1txfreq.length() - 6);
-	        	String khz = radio1txfreq.substring(radio1txfreq.length() - 6, radio1txfreq.length() - 3 );
-	        	String hz = radio1txfreq.substring(radio1txfreq.length() - 3, radio1txfreq.length());
-	        	
-	        	System.out.print("----------------");
-	            // display time and time zone
-	            String str = String.format("%tT %tZ", date, date);
-	        	System.out.printf(str);   	
-	        	System.out.println("----------------");
-	        	
-				System.out.print(radioOne.getRadioModel() + " - " + mhz + "." + khz + "." + hz);
-				System.out.print(" - " + radioOne.getTxBand());
-				System.out.println(" - " + radioOne.getAntLabel());
-	        	System.out.println(radio1data);
-	        	*/
-	        	
-	        	radio2data = radioTwo.getRadioData();
-	        	radio2model = radioTwo.getRadioModel();
-	        	radio2txband = radioTwo.getTxBand();
-	        	radio2txfreq = radioTwo.getTxFreq();
-	        	radio2rxfreq = radioTwo.getRxFreq();
-	        	radio2antlabel = radioTwo.getAntLabel();
-	        	
-	        	/*
-	        	mhz = radio2txfreq.substring(0, radio2txfreq.length() - 6);
-	        	khz = radio2txfreq.substring(radio2txfreq.length() - 6, radio2txfreq.length() - 3 );
-	        	hz = radio2txfreq.substring(radio2txfreq.length() - 3, radio2txfreq.length());
+		            // Instantiate a Date object
+		            Date date = new Date();
+		            
+		        	radio1data = radioOne.getRadioData();
+		        	radio1model = radioOne.getRadioModel();
+		        	radio1txband = radioOne.getTxBand();
+		        	radio1txfreq = radioOne.getTxFreq();
+		        	radio1rxfreq = radioOne.getRxFreq();
+		        	radio1antlabel = radioOne.getAntLabel();
+		 
+		        	/*
+		        	String mhz = radio1txfreq.substring(0, radio1txfreq.length() - 6);
+		        	String khz = radio1txfreq.substring(radio1txfreq.length() - 6, radio1txfreq.length() - 3 );
+		        	String hz = radio1txfreq.substring(radio1txfreq.length() - 3, radio1txfreq.length());
+		        	
+		        	System.out.print("----------------");
+		            // display time and time zone
+		            String str = String.format("%tT %tZ", date, date);
+		        	System.out.printf(str);   	
+		        	System.out.println("----------------");
+		        	
+					System.out.print(radioOne.getRadioModel() + " - " + mhz + "." + khz + "." + hz);
+					System.out.print(" - " + radioOne.getTxBand());
+					System.out.println(" - " + radioOne.getAntLabel());
+		        	System.out.println(radio1data);
+		        	*/
+		        	
+		        	radio2data = radioTwo.getRadioData();
+		        	radio2model = radioTwo.getRadioModel();
+		        	radio2txband = radioTwo.getTxBand();
+		        	radio2txfreq = radioTwo.getTxFreq();
+		        	radio2rxfreq = radioTwo.getRxFreq();
+		        	radio2antlabel = radioTwo.getAntLabel();
+		        	
+		        	/*
+		        	mhz = radio2txfreq.substring(0, radio2txfreq.length() - 6);
+		        	khz = radio2txfreq.substring(radio2txfreq.length() - 6, radio2txfreq.length() - 3 );
+		        	hz = radio2txfreq.substring(radio2txfreq.length() - 3, radio2txfreq.length());
+		
+		
+		        	System.out.println("--------------------------------------------");
+					System.out.print(radioTwo.getRadioModel() + " - " + mhz + "." + khz + "." + hz);
+					System.out.print(" - " + radioTwo.getTxBand());
+					System.out.println(" - " + radioTwo.getAntLabel());
+		        	// System.out.println(radio2data);
+					
+		        	System.out.println("--------------------------------------------");
+		        	*/
+	        	}
+	        	// swap radio data instead of a normal radio poll
+	        	else {
+	        		radioOne.setVfoAB(radioTwo.vfoA, radioTwo.vfoB, radioTwo.vfoAmode, radioTwo.txVfo);
+	        		// System.out.println("Mode: "+ radioTwo.vfoAmode);
+	        		
+	        		radioTwo.setVfoAB(radioOne.vfoA, radioOne.vfoB, radioOne.vfoAmode, radioOne.txVfo);
+	        		// System.out.println("Mode: "+ radioOne.vfoAmode);
+	        		
+	        		DisplayFrame.appendtext("\nSwap radio command complete\n\n");
 	
-	
-	        	System.out.println("--------------------------------------------");
-				System.out.print(radioTwo.getRadioModel() + " - " + mhz + "." + khz + "." + hz);
-				System.out.print(" - " + radioTwo.getTxBand());
-				System.out.println(" - " + radioTwo.getAntLabel());
-	        	// System.out.println(radio2data);
-				
-	        	System.out.println("--------------------------------------------");
-	        	*/
-        	}
-        	// swap radio data instead of a normal radio poll
-        	else {
-        		radioOne.setVfoAB(radioTwo.vfoA, radioTwo.vfoB, radioTwo.vfoAmode, radioTwo.txVfo);
-        		// System.out.println("Mode: "+ radioTwo.vfoAmode);
-        		
-        		radioTwo.setVfoAB(radioOne.vfoA, radioOne.vfoB, radioOne.vfoAmode, radioOne.txVfo);
-        		// System.out.println("Mode: "+ radioOne.vfoAmode);
-        		
-        		DisplayFrame.appendtext("\nSwap radio command complete\n\n");
-
-        		// sleep for 500 milliseconds before clearing swap flag
-    			try {
-    				Thread.sleep(500);
-    			} catch (InterruptedException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    			}  // sleep for a little bit	
-    			
-        		DisplayFrame.clearswapflag();  // clear the swap flag
-        	}
+	        		// sleep for 500 milliseconds before clearing swap flag
+	    			try {
+	    				Thread.sleep(500);
+	    			} catch (InterruptedException e) {
+	    				// TODO Auto-generated catch block
+	    				e.printStackTrace();
+	    			}  // sleep for a little bit	
+	    			
+	        		DisplayFrame.clearswapflag();  // clear the swap flag
+	        	}
+	        }
         }
-    }
-      
+    }     
 }

@@ -1,5 +1,8 @@
 package radioanttracker;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import com.fazecast.jSerialComm.SerialPort;
 
 public class Radio {
@@ -11,61 +14,66 @@ public class Radio {
 	public String vfoBmode = "";
 	public boolean initialized = false;
 	
+	// XML radioData string
+	public String radioData = "";
+	
 	// define the key data items to be accessed from the radio
-	
 	private String rxFreq;
-	
 	private String rxFreqTenHz;
-	
 	private String txFreq;
-	
 	private String txFreqTenHz;
-	
 	private int rxVfo;
-	
 	public int txVfo;
-	
 	private String rxMode;
-	
 	private String txMode;
-	
 	private String rxBand;
-	
 	private String txBand;
-	
 	String antenna;
-	
 	String antLabel;
-	
 	private String id;
-	
+	private String radioNr;
 	private String radioModel;
-	
 	private String comPort;
-	
-	private int baudRate = 38400;
-	
+	private int baudRate = 38400;  // default baud rate
+	private long msec = 500; // default millisecond poll rate
 	private String readData;
-	
-	private String radioDataGram;
+
+    private Timer timer;   
 
 	// items not needed outside of the radio object for now
 
     private SerialPort[] ports;
-    
     private SerialPort port;
-    
 	private int chosenPort = 0;
 
 	// Radio constructor method
-	Radio(String portname, int baud) {
-		
-    	// set comPort to values passed at time of instantiation
+	public Radio(String portname, String baud, String m) {
+		 
+    	// set comPort to default values passed at time of instantiation
 		comPort = portname;
-		baudRate  = baud;
+		baudRate  = Integer.decode(baud);
+		msec = Long.decode(m); // set polling rate 
 		
 		// get list of ports available on system
         ports = SerialPort.getCommPorts();
+    	
+        // Create a timer task to poll this radio object every msec milliseconds
+        timer = new Timer();
+
+        timer.scheduleAtFixedRate(new MyTask(), 0*msec, msec);
+        System.out.println("Timer is started.");
+        DisplayFrame.appendtext("Timer is started.\n");
+	
+	}  // END OF CONSTRUCTOR
+	
+	public boolean init(String portname, String baud, String m) {
+		// Method to select and initialize communication with radio COM port
+		// returns true if initialization successful
+		
+    	// set comPort to values passed in initialization call
+		comPort = portname;
+		baudRate  = Integer.decode(baud);
+		msec = Long.decode(m); // set polling rate (*** need to investigate how to change poll rate)
         
         System.out.print("Selecting port:  ");
         DisplayFrame.appendtext("Selecting port:  ");
@@ -81,7 +89,7 @@ public class Radio {
         	// and save the port list index to chosentPort
         	// this is used later to send and receive data from 
         	// the chosenPort
-        	if (port.getSystemPortName().equals(portname))
+        	if (port.getSystemPortName().equals(comPort))
    			{
         		System.out.println(port.getSystemPortName());
         		DisplayFrame.appendtext(port.getSystemPortName() + "\n");
@@ -105,7 +113,7 @@ public class Radio {
 		else {
 			System.out.println("Unable to open the port.");
 			DisplayFrame.appendtext("Unable to open the port.\n");
-			return;	
+			return initialized;	
 		}
 		
         // set baudRate = 38400(default), DataBits = 8, StopBits = 1, Parity = None
@@ -119,86 +127,79 @@ public class Radio {
         DisplayFrame.appendtext("Baudrate: " + port.getBaudRate());
         System.out.println("  Flow Control: " + port.getFlowControlSettings());
         DisplayFrame.appendtext("  Flow Control: " + port.getFlowControlSettings() + "\n");        
-        readData = getRadioData();
+        
+        // Read the radio data for the first time
+        radioData = readRadioData();
+        // print the radio id and model to validate initialization
 		System.out.print(id);
 		System.out.println("  " + radioModel);
 		DisplayFrame.appendtext(id + "  " + radioModel + "\n");
 		initialized = true;  // set this radio as initialized
-		return;
-        
-    } // END OF CONSTRUCTOR
+		return initialized;       
+    }
 	
 	// define getters and setters for the radio object
-	String getRadioModel()
-	{
+	String getRadioModel() {
 		return radioModel;
 	}
 	
-	String getRxFreq()
-	{
+	String getRxFreq() {
 		return rxFreq;
 	}
 	
-	String getRxFreqTenHz()
-	{
+	String getRxFreqTenHz() {
 		return rxFreqTenHz;
 	}
-	String getTxFreq()
-	{
+	
+	String getTxFreq() {
 		return txFreq;
 	}
 	
-	String getTxFreqTenHz()
-	{
+	String getTxFreqTenHz() {
 		return txFreqTenHz;
 	}
 	
-	int getRxVfo()
-	{
+	int getRxVfo() {
 		return rxVfo;
 	}
 	
-	int getTxVfo()
-	{
+	int getTxVfo() {
 		return txVfo;
 	}
 	
-	String getRxMode()
-	{
+	String getRxMode() {
 		return rxMode;
 	}
 	
-	String getTxMode()
-	{
+	String getTxMode() {
 		return txMode;
 	}
 	
-	String getRxBand()
-	{
+	String getRxBand() {
 		return rxBand;
 	}
 	
-	String getTxBand()
-	{
+	String getTxBand() {
 		return txBand;
 	}
 	
-	String getComPort()
-	{
+	String getComPort() {
 		return comPort;
 	}
 	
-	int getBaudRate()
-	{
+	int getBaudRate() {
 		return baudRate;
 	}
 	
-	String getAntLabel()
-	{
+	String getAntLabel() {
 		return antLabel;
 	}
 	
-	void setVfoAB(String a, String b, String md, int tx) {
+	String getRadioData() {
+		return radioData;
+	}
+	
+	String setVfoAB(String a, String b, String md, int tx) {
 		// this function will set VFO A and B frequencies, mode and TX VFO
 		
 		// First set VFO A freq with VFO B freq using "FAxxxx;" command
@@ -236,17 +237,29 @@ public class Radio {
 		// then set MODE using "MDxx;" command
 		sendSerial(md);
 		
-		// now set TX VFO using "FTx;" x = 3(VFO B) if tx === 1 else x = 2(VFO A)
+		// now set TX VFO using "FTx;" x = 3(VFO B) if tx ==  1 else x = 2(VFO A)
 		if (tx == 1) {
 			sendSerial("FT3;");
 		}
 		else {
 			sendSerial("FT2;");
 		}
+		
+		// Now clear the swapflag for this radio
+		// sleep for 100 milliseconds before returning
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  // sleep for a little bit	
+		
+		return radioNr;
 	}
 	
-	void  sendSerial(String cmd)
-	{
+	void  sendSerial(String cmd) {
+		// Method to send serial data to the radio COM port
+		
 		// send command to radio serial port
         byte[] writeBuffer = cmd.getBytes();
         
@@ -257,7 +270,7 @@ public class Radio {
         // delay a short time to allow radio time to respond to command ~77msec @ 38400 baud
         
         int byterate = baudRate/1000/8; // bytes per millisecond transmission rate
-        int bytespercmd = 4;  // typical bytes per radio command
+        int bytespercmd = cmd.length();  // bytes for this radio command
         int bytesperresp = 12; // max bytes per command response
         int radioresp = byterate * bytesperresp; // milliseconds to allow for radio to respond 
         
@@ -267,14 +280,14 @@ public class Radio {
 			Thread.sleep(msec);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
+			System.out.println("Error in sendtSerial writing to: " + comPort);
 			e.printStackTrace();
 		}  // sleep for a little bit
 		
 		return;		
 	}
 	
-	String getSerial()
-	{
+	String getSerial() {
         // SerialPort port = ports[chosenPort];
         
         byte[] readBuffer = new byte[128];
@@ -287,22 +300,23 @@ public class Radio {
             // System.out.println("Read " + numRead + " bytes");
             // System.out.println(readData);
            
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { 
+        	System.out.println("Error in getSerial reading from: " + comPort);
+        	e.printStackTrace(); 
+        	}
         
 		return readData;	
 	}
 	
-	void closeRadio()
-	{
+	boolean closeRadio() {
 		// SerialPort port = ports[chosenPort];
 		
 		boolean close = port.closePort();
 		
-		return;
+		return close;
 	}
 	
-	String setBand(String freq)
-	{
+	String setBand(String freq) {
 		// set band fields based on rxFreq and txFreq
 		// set antenna number and label selection for each band
 		
@@ -399,24 +413,26 @@ public class Radio {
 	}
 	
 	
-	String getRadioData()
-	{
+	String readRadioData() {
 		// Assemble the XML radio data packet
 		
+		String radioDataGram;
+		
+		// Initialize the components of the XML data packet
 		String radioInfo1 = "<RadioInfo>";
 		String radioInfo2 = "</RadioInfo>";
 		String stationName = "<StationName>NR4O</StationName>";
 		String radioNr1 = "<RadioNr>";
-		String radioNr = "";
+		// radioNr = "";
 		String radioNr2 = "</RadioNr>";
 		String freq1 = "<Freq>";
-		rxFreq = "";
+		// rxFreq = "";
 		String freq2 = "</Freq>";
 		String txFreq1 = "<TXFreq>";
-		txFreq = "";
+		// txFreq = "";
 		String txFreq2 = "</TXFreq>";
 		String mode1 = "<Mode>";
-		txMode = "";
+		// txMode = "";
 		String mode2 = "</Mode>";
 		String opCall = "<OpCall>NR4O</OpCall>";
 		String isRunning = "<IsRunning>False</IsRunning>";
@@ -494,8 +510,9 @@ public class Radio {
 				afreqHz = afreq.substring(4, l -1); 
 				afreqtenHz = afreq.substring(4, l - 2);
 			}
-			// just strip the single leading "0"
+			
 			else {
+				// just strip the single leading "0"
 				afreqHz = afreq.substring(3, l - 1);
 				afreqtenHz = afreq.substring(3, l - 2);
 			}
@@ -573,6 +590,7 @@ public class Radio {
 		vfoAmode = txMode;
 		// System.out.println(mode);
 		
+		// decode the mode response from radio
 		switch (txMode) {
 		
 		case ("MD01;"):  
@@ -652,6 +670,7 @@ public class Radio {
 		
 		// System.out.println("Mode = " + txMode);
 		
+		// Finally assemble the N1MM compatible radio XML datagram string 
 		radioDataGram = (radioInfo1 + "\n\t" + stationName + "\n\t" + radioNr1 + radioNr + radioNr2 
 				+ "\n\t" + freq1 + rxFreqTenHz + freq2 + "\n\t" + txFreq1 + txFreqTenHz + txFreq2 + "\n\t" + 
 				mode1 + txMode + mode2 + "\n\t" + opCall + "\n\t" + isRunning + "\n\t" + focus + 
@@ -661,8 +680,26 @@ public class Radio {
 		return radioDataGram;
 	}
 	
-	
-}
+    private class MyTask extends TimerTask {
+        @Override
+        public void run() {
+
+        	// task to do
+        	
+        	if (initialized) {
+        		if (DisplayFrame.runFlag) {
+	        		// poll the radio on each timer task interrupt    
+		        	radioData = readRadioData();
+        		}
+        	}
+        	else {
+        		// waiting for the radio initialization to tbe completed
+        		System.out.println("Waiting for radio initialization...");
+        		DisplayFrame.appendtext("Waiting for radio initialization...\n");
+        	}
+        }
+    }
+}  // END RADIO CLASS
 	
 /* the N1MM+ radio udp packet XML datagram format
 udp_packet = """<?xml version="1.0" encoding="utf-8"?>

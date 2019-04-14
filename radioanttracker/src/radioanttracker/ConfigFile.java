@@ -10,15 +10,17 @@ public class ConfigFile {
 
 	//public configuration variables
 		// Radio 1 information
-		public String radio1ModelNumber="";
+		public String radio1ModelNumber="ID0460";
 		public String radio1ModelName="FTdx3000";
 		public String radio1PortName="COM13";
 		public String radio1Baudrate="38400";
+		public String radio1PollRate="500";  // default 500 millisec
 		// Radio 2 information
-		public String radio2ModelNumber="";
+		public String radio2ModelNumber="ID0570";
 		public String radio2ModelName="FT-991";
 		public String radio2PortName="COM15";
 		public String radio2Baudrate="38400";
+		public String radio2PollRate="500";  // default 500 millisec
 		// speAmp communications are currently not used by this program
 		// control port is used by the SPE Term_1.3K application
 		// CAT port 1 is connected to Win4Yaesu for radio 1
@@ -80,11 +82,13 @@ public class ConfigFile {
 			radio1ModelName = properties.getProperty("radio1ModelName");
 			radio1PortName = properties.getProperty("radio1PortName");
 			radio1Baudrate = properties.getProperty("radio1Baudrate");
+			radio1PollRate = properties.getProperty("radio1PollRate");
 			
 			radio2ModelNumber = properties.getProperty("radio2ModelNumber");
 			radio2ModelName = properties.getProperty("radio2ModelName");
 			radio2PortName = properties.getProperty("radio2PortName");
 			radio2Baudrate = properties.getProperty("radio2Baudrate");
+			radio2PollRate = properties.getProperty("radio2PollRate");
 			
 			speAmpModelName = properties.getProperty("speAmpModelName");
 			speAmpPortName = properties.getProperty("speAmpPortName");
@@ -124,11 +128,15 @@ public class ConfigFile {
 			bufferWrite.append("radio1ModelName=" + radio1ModelName + "\r\n");
 			bufferWrite.append("radio1PortName=" + radio1PortName + "\r\n");
 			bufferWrite.append("radio1Baudrate=" + radio1Baudrate + "\r\n");
+			bufferWrite.append("# default poll rate 500 milliseconds\r\n");
+			bufferWrite.append("radio1PollRate=" + radio1PollRate + "\r\n");
 			bufferWrite.newLine();
 			bufferWrite.append("radio2ModelNumber=" + radio2ModelNumber + "\r\n");
 			bufferWrite.append("radio2ModelName=" + radio2ModelName + "\r\n");
 			bufferWrite.append("radio2PortName=" + radio2PortName + "\r\n");
 			bufferWrite.append("radio2Baudrate=" + radio2Baudrate + "\r\n");
+			bufferWrite.append("# default poll rate 500 milliseconds\r\n");
+			bufferWrite.append("radio2PollRate=" + radio2PollRate + "\r\n");
 			bufferWrite.newLine();
 			bufferWrite.append("# speAmp communications are currently not used by this program\r\n" + 
 					"	# control port is used by the SPE Term_1.3K application\r\n" + 

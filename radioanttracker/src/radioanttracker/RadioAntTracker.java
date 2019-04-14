@@ -18,12 +18,12 @@ public class RadioAntTracker {
 /*  not sure how to instantiate the radios for global program access
 	String radio1PortName = "COM13";
 	String radio2PortName = "COM15";
-	int baudrate = 38400; // default baudrate for now
+	int baudrate = 38400; // default baud rate for now
 	
     // instantiate the radio object
-	Radio radioOne = new Radio(radio1PortName, baudrate);
+	Radio radioOne = new Radio(radio1PortName, baud rate);
 	
-	Radio radioTwo = new Radio(radio2PortName, baudrate);
+	Radio radioTwo = new Radio(radio2PortName, baud rate);
 */
 	
 	// Initialize the current band to null to force the initial udp packet
@@ -42,22 +42,26 @@ public class RadioAntTracker {
 	public static boolean r1_Initialized = false;
 	public static boolean r2_Initialized = false;
 	
+	// Default values until configuration file data is read
+    public static String radio1PortName = "COM13";
+    public static String radio1Baudrate = "38400";
+    public static String radio1PollRate = "500";
+	public static String radio2PortName = "COM15";
+	public static String radio2Baudrate = "38400";
+    public static String radio2PollRate = "500";
+	static int baudrate = 38400; // default baud rate for now
+	
+	
+	
 	// Instantiate the application window
     public static DisplayFrame frame = new DisplayFrame();
-/*    
-    // instantiate the radio object
-    static String radio1PortName = "COM13";
-	static String radio2PortName = "COM15";
-	static int baudrate = 38400; // default baudrate for now
 	
-	public static Radio radioOne = new Radio(radio1PortName, baudrate);
-
-	public static Radio radioTwo = new Radio(radio2PortName, baudrate);
-*/    		
-	// Instantiate the polling task for the radios
-	// poll every 500 msec
-	public static PollRadiosTask polldata = new PollRadiosTask(500);
-
+	// Replace the PollRadioTask with updated version of Radio object
+	// These may be able to be moved inside of main depending on how tasks work
+	// replace references to polldata with radioOne and radioTwo where appropriate
+	
+	public static Radio radioOne = new Radio(radio1PortName, radio1Baudrate, radio1PollRate);
+	public static Radio radioTwo = new Radio(radio2PortName, radio2Baudrate, radio2PollRate);
 	
 	
 	public static void main(String[] args) {
@@ -78,8 +82,8 @@ public class RadioAntTracker {
 		
 		System.out.println("********************");
 		
-		System.out.println("Radio1: " + config.radio1ModelNumber + "," + config.radio1ModelName + "," + config.radio1PortName + "," + config.radio1Baudrate);
-		System.out.println("Radio2: " + config.radio2ModelNumber + "," + config.radio2ModelName + "," + config.radio2PortName + "," + config.radio2Baudrate);
+		System.out.println("Radio1: " + config.radio1ModelNumber + "," + config.radio1ModelName + "," + config.radio1PortName + "," + config.radio1Baudrate + "," + config.radio1PollRate);
+		System.out.println("Radio2: " + config.radio2ModelNumber + "," + config.radio2ModelName + "," + config.radio2PortName + "," + config.radio2Baudrate + "," + config.radio1PollRate);
 		System.out.print("AMP: " + config.speAmpModelName + "," + config.speAmpPortName + "," + config.speAmpBaudrate);
 		System.out.print("," + config.speAmpCATPort1 + "," + config.speAmpCATBaudrate1);
 		System.out.println("," + config.speAmpCATPort2 + "," + config.speAmpCATBaudrate2);
@@ -97,10 +101,24 @@ public class RadioAntTracker {
 		
 		System.out.println("********************");
 		
-		// create a window with text field
+		// Initialize the radio polling objects
+		
+		if (radioOne.init(config.radio1PortName, config.radio1Baudrate, config.radio1PollRate)) {
+			System.out.println("Radio 1 initialized...");
+		}
+		else {
+			System.out.println("ERROR: Radio 1 NOT initialized");
+		}
 
-		System.out.println("Running....");
-		DisplayFrame.appendtext("Running....\n");
+		if (radioTwo.init(config.radio2PortName, config.radio2Baudrate, config.radio2PollRate)) {
+			System.out.println("Radio 2 initialized...");
+		}
+		else {
+			System.out.println("ERROR: Radio 2 NOT initialized");
+		}
+
+		System.out.println("Polling started....");
+		DisplayFrame.appendtext("Polling started....\n");
 		
 		// delay starting the main loop to allow for the radio
 		// communication ports to be opened and initial data collected
@@ -116,53 +134,72 @@ public class RadioAntTracker {
 		int i = d/msec; // udp band check loops before forcing a udp update
 		
 		while (true ) {	
+							
+			if (DisplayFrame.swapflag) {
+				
+				// swap the frequency and mode data between the radios
+				// read and save radio 1 data temporarily to send to radio 2
+				String r1vfoA = radioOne.vfoA;
+				String r1vfoB = radioOne.vfoB;
+				String r1vfoAmode = radioOne.vfoAmode;
+				String r1vfoBmode = radioOne.vfoBmode;
+				int r1txVfo = radioOne.txVfo;
+				radioOne.setVfoAB(radioTwo.vfoA, radioTwo.vfoB, radioTwo.vfoAmode, radioTwo.txVfo);
+				DisplayFrame.appendtext("\n" + radioOne.getRadioModel() + " - Swap radio command complete \n\n");
+				radioTwo.setVfoAB(r1vfoA, r1vfoB, r1vfoAmode, r1txVfo);
+				DisplayFrame.appendtext("\n" + radioTwo.getRadioModel() + " - Swap radio command complete \n\n");
+				// clear the swap flag
+				DisplayFrame.clearswapflag();
+			}
 			
-			// radio data change flags - true if data is same as last poll
-			boolean r1 = data1.equals(polldata.getradio1data());
-			boolean r2 = data2.equals(polldata.getradio2data());
-			boolean b1 = txband1.equals(polldata.getradio1txband());
-			boolean b2 = txband2.equals(polldata.getradio2txband());
-			boolean b3 = txfreq1.equals(polldata.getradio1txfreq());
-			boolean b4 = txfreq2.equals(polldata.getradio2txfreq());
+			else {
+				
+				// radio data change flags - true if data is same as last poll
+				boolean r1 = data1.equals(radioOne.getRadioData());
+				boolean r2 = data2.equals(radioTwo.getRadioData());
+				boolean b1 = txband1.equals(radioOne.getTxBand());
+				boolean b2 = txband2.equals(radioTwo.getTxBand());
+				boolean b3 = txfreq1.equals(radioOne.getTxFreq());
+				boolean b4 = txfreq2.equals(radioTwo.getTxFreq());
 
-			// System.out.println(b1 + " " + b2);
+				
+				if (DisplayFrame.runFlag) {
+					// if the runflag and !swapflag are true
+					// then if either radio data has changed since last poll
+	
+					if (!r1 || !r2 || ( i== 0)) {
 						
-			if (frame.runFlag && !DisplayFrame.swapflag) {
-				// if the runflag and swapflag are true
-				// then if either radio data has changed since last poll
-
-				if (!r1 || !r2 || ( i== 0)) {
+						// send udp packets to antenna controller
+						
+						udpupdate();
+						
+						i = d/msec; // reset the loop counter
+						
+					}
+					else {
+						// delay a little bit before checking for a band change
 					
-					// send udp packets to antenna controller
-					
-					udpupdate();
-					
-					i = d/msec; // reset the loop counter
-					
+						try {
+							Thread.sleep(msec);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}  // sleep for a little bit
+						
+						i--; // decrement udp loop counter
+					}
 				}
 				else {
-					// delay a little bit before checking for a band change
-				
+					i = 0;  // force a udp packet update after a pause
+					// now delay for 500 milliseconds before checking button status
 					try {
-						Thread.sleep(msec);
+						Thread.sleep(500);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-					}  // sleep for a little bit
-					
-					i--; // decrement udp loop counter
+					}  // sleep for a little bit	
 				}
 			}
-			else {
-				i = 0;  // force a udp packet update after a pause
-				// now delay for 500 milliseconds before checking button status
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}  // sleep for a little bit	
-			}		
 		}
 	} // end of main()
 	
@@ -174,22 +211,28 @@ public class RadioAntTracker {
 		
 		
 		// update current TX band info
-		model1 = polldata.getradio1model();
-		model2 = polldata.getradio2model();
+		model1 = radioOne.getRadioModel();
+		model2 = radioTwo.getRadioModel();
+		// System.out.println(model1 + "   "+ model2);
 		
-		txband1 = polldata.getradio1txband();
-		txband2 = polldata.getradio2txband();
+		txband1 = radioOne.getTxBand();
+		txband2 = radioTwo.getTxBand();
+		// System.out.println(txband1 + "   "+ txband2);
 		
 		// update current TX freq info 		
-		txfreq1 = polldata.getradio1txfreq();
-		txfreq2 = polldata.getradio2txfreq();
+		txfreq1 = radioOne.getTxFreq();
+		txfreq2 = radioTwo.getTxFreq();
+		// System.out.println(txfreq1 + "   "+ txfreq2);
 		
-		antlabel1 = polldata.getradio1antlabel();
-		antlabel2 = polldata.getradio2antlabel();
+		antlabel1 = radioOne.getAntLabel();
+		antlabel2 = radioTwo.getAntLabel();
+		// System.out.println(antlabel1 + "   "+ antlabel2);
 			
 		// get current radio data and send a udp packet to antenna controller		
-		data1 = polldata.getradio1data();
-		data2 = polldata.getradio2data();
+		data1 = radioOne.getRadioData();
+		// System.out.println(data1);
+		data2 = radioTwo.getRadioData();
+		// System.out.println(data2);
 		
 		// print the updated radio summary
 		

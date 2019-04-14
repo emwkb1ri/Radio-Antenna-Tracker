@@ -56,7 +56,7 @@ public class DisplayFrame extends JFrame{
 				
 		// Define the title for the frame
 				
-		this.setTitle("Radio Antenna Tracker v4.xx");
+		this.setTitle("Radio Antenna Tracker v4.01");
 				
 		// The JPanel contains all of the components for your frame
 				
@@ -183,7 +183,7 @@ public class DisplayFrame extends JFrame{
 				}
 			}
 			else if (e.getSource() == button2) {
-				// set Swap radio 1 info with radio 2 flag
+				// set Swap flags to swap radio 1 info with radio 2 info
 				button2Clicked++;
 				swapflag = true;
 				textArea1.append("Swap button pressed......\n" );
@@ -193,7 +193,7 @@ public class DisplayFrame extends JFrame{
 	
 	
 	public static void clearswapflag() {
-		swapflag = false;
+			swapflag = false;
 	}
 
 	

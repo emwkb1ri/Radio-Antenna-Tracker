@@ -386,22 +386,22 @@ public class Radio {
 		}
 		else if (1440 <= val && val <= 1479) {
 			band = "2M";
-			antenna = "1";
+			antenna = "8";	// set this band to antenna 8 - avoids conflict with radio 1 on 6M
 			antLabel = "2M / 70cm J-Pole";
 		}
 		else if (4300 <= val && val <= 4499) {
 			band = "70cm";
-			antenna = "1";
+			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
 			antLabel = "2M / 70cm J-Pole";
 		}
 		else if (9020 <= val && val <= 9279) {
 			band = "33cm";
-			antenna = "1";
+			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
 			antLabel = "NONE";
 		}
 		else if (1240 <= val && val <= 1299) {
 			band = "23cm";
-			antenna = "1";
+			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
 			antLabel = "NONE";
 		}
 		else {

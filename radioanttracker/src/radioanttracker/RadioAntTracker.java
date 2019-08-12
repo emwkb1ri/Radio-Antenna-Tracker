@@ -171,7 +171,7 @@ public class RadioAntTracker {
 						
 						// send udp packets to antenna controller
 						
-						udpupdate();
+						udpupdate(config.broadcastList);
 						
 						i = d/msec; // reset the loop counter
 						
@@ -204,7 +204,7 @@ public class RadioAntTracker {
 	} // end of main()
 	
 	
-	public static void udpupdate() {
+	public static void udpupdate(String list) {
 		// This method is run only when radio information changes
 		// it will print radio summary to the console and then
 		// send udp packets to all IP and ports in the list
@@ -241,42 +241,57 @@ public class RadioAntTracker {
 		System.out.println("+++++++++ Radio 1 +++++++++");
 		DisplayFrame.appendtext("+++++++++ Radio 1 +++++++++\n");
 		// System.out.println(data1);
-		sendudp(data1);
+		sendudp(list, data1);
 		System.out.println("+++++++++ Radio 2 +++++++++");
 		DisplayFrame.appendtext("+++++++++ Radio 2 +++++++++\n");
 		// System.out.println(data2);
-		sendudp(data2);
+		sendudp(list, data2);
 		// System.out.println("+++++++++++++++++");
 	}
 	
-	public static void sendudp(String data) 
-	{	
-		// String LOCALHOST = "127.0.0.1";
-		// KB1RI-pi1 = 192.168.1.74
-		// port list to send radio info udp packets
-		String hosts[] = {"127.0.0.1", "192.168.1.250"};
-    	int ports[][] = {
-    			{12060, 13063, 13065},
-    			{12060}
-    			};
-    	
-    	// 12060 = N1MM+ default radio info port
-    	// 13063 = WaterfallBandmap program instance 1 port
-    	// 13065 = WaterfallBandmap program instance 2 port
-		    	    	
-		// send udp packets to all ports listed in the hosts[] and ports[] lists
-    	for (int h = 0; h < hosts.length; h++ ) {
-	    	for (int i = 0; i < ports[h].length; i++) {
-	    	
-		        try {
-		        	InetAddress address = InetAddress.getByName(hosts[h]);
+	public static void sendudp(String bCast, String data) 
+	{
+		// bCast = the broadcast list string from config file
+		// parse the broadcast list - "hostname:ip:port(n), port(n+1), port(n+x);"
+		
+		String[] hostArray = bCast.split(";");  // split the list into hosts
+		String[] nameArray;
+		String host;
+		String ip;
+		String sockets;
+		String[] socketArray;
+		
+		int socketNum = 0;
+			
+		for (int i = 0; i < hostArray.length; i++) {
+			nameArray = hostArray[i].split(":"); // split the hosts into name, ip, ports
+			host = nameArray[0];
+			ip = nameArray[1];
+			sockets = nameArray[2];
+			socketArray = sockets.split(","); // split the port addresses
+			
+			for (int n = 0; n < socketArray.length; n++) {
+				// send a udp packet to each ip:port pair from the bCast list
+
+				try {
+		        	InetAddress address = InetAddress.getByName(ip);
 			    	// InetAddress address = InetAddress.getByName(LOCALHOST);
+
+		        	try {
+		        		socketNum = Integer.parseInt(socketArray[n]);
+		        	}
+		        	catch (NumberFormatException e)
+		        	{
+		        		DisplayFrame.appendtext("Number Format Exception: int conversion of socket number in sendudp()");
+		        		socketNum = 0;
+		        	}
+		        	
 					DatagramSocket socket = new DatagramSocket();
 					 
 					byte[] buffer = new byte[1024];
 					buffer = data.getBytes();
 					 
-					DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, ports[h][i]);
+					DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, socketNum);
 					socket.send(request);
 			        socket.close();
 		        } catch (SocketException ex) {
@@ -284,10 +299,11 @@ public class RadioAntTracker {
 		        } catch (IOException ex) {
 		            System.out.println("I/O error: " + ex.getMessage());
 		        }
-		        System.out.println("*** " + hosts[h] + ": " + ports[h][i] + " ***");
-		        DisplayFrame.appendtext("*** " + hosts[h] + ": " + ports[h][i] + " ***\n");
-			}
-    	}
+		        System.out.println("*** udp packet " + n + ": " + host + ":" + ip + ":" + socketNum + " ***");
+		        DisplayFrame.appendtext("*** udp packet " + n + ": " + host + ":" + ip + ":" + socketNum + " ***\n");
+				
+			}			
+		}
 	}
 	
 	public static void printradioinfo() {

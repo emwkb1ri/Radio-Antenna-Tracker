@@ -33,7 +33,7 @@ public class ConfigFile {
 		public String speAmpCATPort2="COM99";  //CAT port radio 2
 		public String speAmpCATBaudrate2="38400";
 		// udp broadcast port information (defaults)
-		public String broadcastList="LOCALHOST:127.0.0.1:12060, 13063, 13065; NR4O-pi1:192.168.1.250:12060;";
+		public String broadcastList="LOCALHOST:127.0.0.1:12060, 13063, 13065; NR4O-pi1:192.168.1.250:12060; ESP_349ADA:192.168.1.75:12060;";
 		// IP controlled antenna controller information
 		public String switch1IP="192.168.1.x";
 		public String switch2IP="192.168.1.y";

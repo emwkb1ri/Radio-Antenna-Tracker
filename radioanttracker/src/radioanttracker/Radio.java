@@ -670,8 +670,10 @@ public class Radio {
 		
 		// System.out.println("Mode = " + txMode);
 		
-		// Finally assemble the N1MM compatible radio XML datagram string 
-		radioDataGram = (radioInfo1 + "\n\t" + stationName + "\n\t" + radioNr1 + radioNr + radioNr2 
+		// Finally assemble the N1MM compatible radio XML datagram string
+		String xmlHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+		
+		radioDataGram = (xmlHeader + "\n" + radioInfo1 + "\n\t" + stationName + "\n\t" + radioNr1 + radioNr + radioNr2 
 				+ "\n\t" + freq1 + rxFreqTenHz + freq2 + "\n\t" + txFreq1 + txFreqTenHz + txFreq2 + "\n\t" + 
 				mode1 + txMode + mode2 + "\n\t" + opCall + "\n\t" + isRunning + "\n\t" + focus + 
 				"\n\t" + antenna1 + antenna + antenna2 + "\n\t" + rotor + "\n\t" + focusRadio + 

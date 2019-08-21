@@ -1,14 +1,21 @@
 package radioanttracker;
 
-// Java version of Radio_Ant_Tracker.py
-// Reads each of my radios COM ports every .5 secs
-// Calculates operating frequency from TX frequency
-// Selects ant number based on band lookup table
-// Assembles an XML packet in the N1MM+ OTRSP format
-// Sends the XML packet via UDP to a LOCALHOST and a remote HOST IP socket port.
-// Sends UDP packet every 10 seconds or when an antenna change is detected.
-// Monitors keyboard input for 'p' pause, 'r' run, 'q' quit
-
+/* Flex version of my radioanttracker I used with the FT-991/FTdx3000
+ *
+ * Reads each of my radios COM ports every .5 secs
+ * Calculates operating frequency from TX frequency
+ * Selects ant number based on band lookup table
+ * Assembles an XML packet in the N1MM+ OTRSP format
+ * Sends the XML packet via UDP to a LOCALHOST and a remote HOST IP socket port.
+ * Sends UDP packet every 10 seconds or when an antenna change is detected.
+ * Monitors keyboard input for 'p' pause, 'r' run, 'q' quit
+ * 
+ * ver 0.01 - first version attempting to use the Flex CAT commands
+ * 			- modified for 11 digit Flex frequency string
+ * 			- change the swap radio function to only act on VFO A
+ * 			- changed how radioNr is determined - essentially based on each instance of Radio
+ * 
+ */
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -60,8 +67,8 @@ public class RadioAntTracker {
 	// These may be able to be moved inside of main depending on how tasks work
 	// replace references to polldata with radioOne and radioTwo where appropriate
 	
-	public static Radio radioOne = new Radio(radio1PortName, radio1Baudrate, radio1PollRate);
-	public static Radio radioTwo = new Radio(radio2PortName, radio2Baudrate, radio2PollRate);
+	public static Radio radioOne = new Radio("1", radio1PortName, radio1Baudrate, radio1PollRate);
+	public static Radio radioTwo = new Radio("2", radio2PortName, radio2Baudrate, radio2PollRate);
 	
 	
 	public static void main(String[] args) {
@@ -130,7 +137,7 @@ public class RadioAntTracker {
 		}  // sleep for a little bit
 
 		int msec = 100; // band change poll interval in milliseconds
-		int d = 30000; // regular udp update interval in milliseconds regardless of band change
+		int d = 10000; // regular udp update interval in milliseconds regardless of band change
 		int i = d/msec; // udp band check loops before forcing a udp update
 		
 		while (true ) {	

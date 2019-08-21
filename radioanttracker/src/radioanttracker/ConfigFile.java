@@ -10,15 +10,15 @@ public class ConfigFile {
 
 	//public configuration variables
 		// Radio 1 information
-		public String radio1ModelNumber="ID0460";
-		public String radio1ModelName="FTdx3000";
-		public String radio1PortName="COM13";
+		public String radio1ModelNumber="IDxxx";
+		public String radio1ModelName="FLex6000";
+		public String radio1PortName="COM21";
 		public String radio1Baudrate="38400";
 		public String radio1PollRate="500";  // default 500 millisec
 		// Radio 2 information
-		public String radio2ModelNumber="ID0570";
-		public String radio2ModelName="FT-991";
-		public String radio2PortName="COM15";
+		public String radio2ModelNumber="IDxxx";
+		public String radio2ModelName="Flex6000";
+		public String radio2PortName="COM22";
 		public String radio2Baudrate="38400";
 		public String radio2PollRate="500";  // default 500 millisec
 		// speAmp communications are currently not used by this program

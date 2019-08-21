@@ -13,6 +13,8 @@ public class Radio {
 	public String vfoAmode = "";
 	public String vfoBmode = "";
 	public boolean initialized = false;
+	public int initializeWaitCounter = 0; // counter to delay printing of COM port wait
+	public int initializeWaitValue = 120; // default waiut counter value # * pollrate(500 mSec)
 	
 	// XML radioData string
 	public String radioData = "";
@@ -47,7 +49,10 @@ public class Radio {
 	private int chosenPort = 0;
 
 	// Radio constructor method
-	public Radio(String portname, String baud, String m) {
+	public Radio(String radioNumber, String portname, String baud, String m) {
+		
+		// set the radio number for this instance
+		radioNr = radioNumber;
 		 
     	// set comPort to default values passed at time of instantiation
 		comPort = portname;
@@ -105,16 +110,23 @@ public class Radio {
         System.out.println(" " + port.getSystemPortName());
         DisplayFrame.appendtext(port.getSystemPortName() + "\n");
         
-        // validate port was opened
-		if(port.openPort()) {
-			System.out.println("Successfully opened the port.");
-			DisplayFrame.appendtext("Successfully opened the port.\n");
-		} 
-		else {
-			System.out.println("Unable to open the port.");
-			DisplayFrame.appendtext("Unable to open the port.\n");
-			return initialized;	
-		}
+        try {
+
+	        // validate port was opened
+			if(port.openPort()) {
+				System.out.println("Successfully opened the port.");
+				DisplayFrame.appendtext("Successfully opened the port.\n");
+			} 
+			else {
+				System.out.println("Unable to open the port.");
+				DisplayFrame.appendtext("Unable to open the port.\n");
+				return initialized;	
+			}
+	
+        } catch (Exception e) { 
+        	System.out.println("Error in opening port " + comPort);
+        	e.printStackTrace(); 
+        }
 		
         // set baudRate = 38400(default), DataBits = 8, StopBits = 1, Parity = None
         port.setComPortParameters(baudRate, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
@@ -202,49 +214,45 @@ public class Radio {
 	String setVfoAB(String a, String b, String md, int tx) {
 		// this function will set VFO A and B frequencies, mode and TX VFO
 		
-		// First set VFO A freq with VFO B freq using "FAxxxx;" command
-		if ((this.radioModel).equals("FT-991")) {
-			System.out.println(this.radioModel);
-			// pad the frequency with a leading "0" or "00" if this is the FT-991
-			// frequency must be 9 digits long for FT-991
-			for (int n = a.length(); n < 9; n++)  {
-				a = "0" + a;
-			}	
-			for (int n = b.length(); n < 9; n++)  {
-				b = "0" + b;
-			}
-		}
-		// otherwise frequency must be 8 digits long for FTdx3000 
-		for (int n = a.length(); n < 8; n++)  {
+		// First set VFO A freq with VFO B freq using "ZZFAxxxx;" command
+
+		// frequency must be 11 digits long for the Flex 
+	
+		for (int n = a.length(); n < 11; n++)  {
 			a = "0" + a;
 		}	
-		for (int n = b.length(); n < 8; n++)  {
+		for (int n = b.length(); n < 11; n++)  {
 			b = "0" + b;
 		}
 
-		sendSerial("FA" + b + ";");
+/*  For the Flex I don't need to manipulate the VFO A & B to swap radios like on the Yaesu FT-991		
+		sendSerial("ZZFA" + b + ";");
 		
-		// then set MODE using "MDxx;" command
+		// then set MODE using "ZZMDxx;" command
 		sendSerial(md);
 		
 		// then move VFO A to VFO B using "AB;" command
 		sendSerial("AB;");
 		
 		// now set VFO A freq with VFO freq using "FAxxxx;" command
-
-		sendSerial("FA" + a + ";");
+*/
 		
-		// then set MODE using "MDxx;" command
+		sendSerial("ZZFA" + a + ";");
+		
+		// then set MODE using "ZZMDxx;" command
 		sendSerial(md);
-		
-		// now set TX VFO using "FTx;" x = 3(VFO B) if tx ==  1 else x = 2(VFO A)
+
+/* Skip setting the TX VFO in this function for now - just swap the VFO's between slices hopefully
+ * 
+		// now set TX VFO using "ZZSWx;" x = 1(VFO B) if tx == 1 else x = 0(VFO A)
 		if (tx == 1) {
-			sendSerial("FT3;");
+			sendSerial("ZZSW1;");
 		}
 		else {
-			sendSerial("FT2;");
+			sendSerial("ZZSW0;");
 		}
 		
+*/
 		// Now clear the swapflag for this radio
 		// sleep for 100 milliseconds before returning
 		try {
@@ -386,22 +394,22 @@ public class Radio {
 		}
 		else if (1440 <= val && val <= 1479) {
 			band = "2M";
-			antenna = "8";	// set this band to antenna 8 - avoids conflict with radio 1 on 6M
+			antenna = "0";	// set this band to antenna 0 - avoids conflict with radio 1 on 6M
 			antLabel = "2M / 70cm J-Pole";
 		}
 		else if (4300 <= val && val <= 4499) {
 			band = "70cm";
-			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
+			antenna = "0";  // set this band to antenna 0 - avoids conflict with radio 1 on 6M
 			antLabel = "2M / 70cm J-Pole";
 		}
 		else if (9020 <= val && val <= 9279) {
 			band = "33cm";
-			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
+			antenna = "0";  // set this band to antenna 0 - avoids conflict with radio 1 on 6M
 			antLabel = "NONE";
 		}
 		else if (1240 <= val && val <= 1299) {
 			band = "23cm";
-			antenna = "8";  // set this band to antenna 8 - avoids conflict with radio 1 on 6M
+			antenna = "0";  // set this band to antenna 0 - avoids conflict with radio 1 on 6M
 			antLabel = "NONE";
 		}
 		else {
@@ -448,23 +456,17 @@ public class Radio {
 		
 		// get radio ID -- ID;
 		// ID = 0460 -- FTdx3000
-		// ID = 0570 -- FT-991		
+		// ID = 0570 -- FT-991
+        // ID = 909 -- Flex6600
 		sendSerial("ID;");
 		id = getSerial();
-
-		if (id.length() != 0) {
-			if (id.equals("ID0570;")) {
-				radioModel = "FT-991";
-				radioNr = "2";
-			}
-			else if (id.equals("ID0460;")) {
-				radioModel = "FTdx3000";
-				radioNr = "1";
-			}
+		if (id.equals("ID909;")) {
+			radioModel = "Flex6600";
+			radioModel = radioModel + "-" + radioNr; // add radio number to the model name
 		}
 		
-		// get RX VFO -- "FR;" for FTdx3000 skip for FT-991
-		// FR0 or FR1 = vfo A -- FR4 or FR5 = vfo B		
+		// get RX VFO -- "FR;"
+		// FR0; = vfo A -- FR1; = vfo B		
 		sendSerial("FR;");
 		String rxvfo = getSerial();
 		if (rxvfo.equals("FR1;"))
@@ -493,8 +495,8 @@ public class Radio {
 		
 		// System.out.println("TX VFO = " + txVfo);
 			
-		// get vfo A freq -- "FA;"
-		sendSerial("FA;");
+		// get vfo A freq -- "ZZFA;"
+		sendSerial("ZZFA;");
 		
 		String afreq = getSerial();
 		
@@ -502,64 +504,66 @@ public class Radio {
 		String afreqtenHz = afreq;
 		
 		l = afreq.length();
+		
+		// if length isn't what's expected set a default freq
+		if (l != 16) {
+			afreq = "ZZFB00001800000;";
+		}
 		// strip the "FA", leading "0" and trailing ";" from the response
 		// ten Hz resolution freqtenHz to meet N1MM xml definition
-		if (afreq.substring(2, 3).equals("0")) {
-			// if both leading digits are "00" strip them 
-			if (afreq.substring(2, 4).equals("00")) {
-				afreqHz = afreq.substring(4, l -1); 
-				afreqtenHz = afreq.substring(4, l - 2);
-			}
-			
-			else {
-				// just strip the single leading "0"
-				afreqHz = afreq.substring(3, l - 1);
-				afreqtenHz = afreq.substring(3, l - 2);
-			}
-		}
-			
-		// no leading "0"
-		else { 
-			afreqHz = afreq.substring(2, l - 1);
-			afreqtenHz = afreq.substring(2, l - 2);
+		int i = 4; // frequency digits start at index pointer = 4
+		
+		while (afreq.substring(i, i + 1).equals("0")) {
+			// increment the string pointer for every leading "0"
+			i++;
 		}
 		
-		// System.out.println("VFO A: " + afreq);
-		
-		// get vfo B freq -- "FB;"
-		sendSerial("FB;");
-		
-		String bfreq = getSerial();
+		// now set the strings to the frequency with no leading zeros
+		// or trailing ";"
+		afreqHz = afreq.substring(i, l - 1); 
+		afreqtenHz = afreq.substring(i, l - 2);
 
-		String bfreqHz = bfreq;
-		String bfreqtenHz = bfreq;
 		
-		l = bfreq.length();
-		// strip the FB and ; from the response
-		if (bfreq.substring(2, 3).equals("0")) {
-			// if both leading digits are "00" strip them 
-			if (bfreq.substring(2, 4).equals("00")) {
-				bfreqHz = bfreq.substring(4, l -1);
-				bfreqtenHz = bfreq.substring(4, l - 2);
+		// ********* may have to validate the VFO B actually exists or will this return slice B info?
+		
+		// if rxVfo or txVfo are not set to 1 - skip reading vfo B freq 
+		
+		String bfreq = "ZZFB00000100000;"; // set default freq of 100 kHz
+		String bfreqHz = "100000";
+		String bfreqtenHz = "10000";
+		
+		if (rxVfo == 1 || txVfo == 1) {
+			
+			// get vfo B freq -- "ZZFB;"
+			sendSerial("ZZFB;");
+			
+			bfreq = getSerial();
+
+			bfreqHz = bfreq;
+			bfreqtenHz = bfreq;
+			
+			l = bfreq.length();
+			// if length isn't what's expected set a default freq
+			if (l != 16) {
+				bfreq = "ZZFB00000100000;";  // set a default of 100 kHz
 			}
-			// just strip the single leading "0"
-			else {
-				bfreqHz = bfreq.substring(3, l - 1);
-				bfreqtenHz = bfreq.substring(3, l - 2);
+						
+			// strip the FB and ; from the response
+			i = 4; // frequency digits start at index pointer = 4 
+			while (bfreq.substring(i, i + 1).equals("0")) {
+				// increment the string pointer for every leading "0"
+				i++;
 			}
+			// now set the strings to the frequency with no leading zeros
+			// or trailing ";"
+			bfreqHz = bfreq.substring(i, l - 1); 
+			bfreqtenHz = bfreq.substring(i, l - 2);
 		}
-		
-		// no leading "0"
-		else { 
-			bfreqHz = bfreq.substring(2, l - 1);
-			bfreqtenHz = bfreq.substring(2, l - 2);
-		}
-		
-		// System.out.println("VFO B: " + bfreq);
 		
 		// set the global vfoA and vfoB values
 		vfoA = afreqHz;
-		vfoB = bfreqHz;
+		vfoB = bfreqHz;	
+
 		
 		// set the rxFreq and txFreq values based on rx/txVfo values
 		if (rxVfo == 0) {
@@ -584,8 +588,8 @@ public class Radio {
 		rxBand = setBand(rxFreq);
 		txBand = setBand(txFreq);
 		
-		// get mode -- MD0;
-		sendSerial("MD0;");
+		// get mode -- from Flex with ZZMD;
+		sendSerial("ZZMD;");
 		txMode = getSerial();
 		vfoAmode = txMode;
 		// System.out.println(mode);
@@ -593,73 +597,73 @@ public class Radio {
 		// decode the mode response from radio
 		switch (txMode) {
 		
-		case ("MD01;"):  
+		case ("ZZMD00;"):  
 			txMode = "LSB";
 			rxMode = txMode;
 			break;
 			
-		case ("MD02;"):
+		case ("ZZMD01;"):
 			txMode = "USB";
 			rxMode = txMode;
 			break;
 			
-		case ("MD03;"): 
-			txMode = "CW";
+		case ("ZZMD03;"): 
+			txMode = "CWL";
 			rxMode = txMode;
 			break;
 			
-		case ("MD04;"):
+		case ("ZZMD04;"):
+			txMode = "CWU";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD05;"): 
 			txMode = "FM";
 			rxMode = txMode;
 			break;
 			
-		case ("MD05;"): 
+		case ("ZZMD06;"):
 			txMode = "AM";
 			rxMode = txMode;
 			break;
 			
-		case ("MD06;"):
+		case ("ZZMD07;"):
+			txMode = "DIGU";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD09;"):
+			txMode = "DIGL";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD10;"):
+			txMode = "SAM";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD11;"):
+			txMode = "NFM";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD12;"):
+			txMode = "DFM";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD20;"):
+			txMode = "FDV";
+			rxMode = txMode;
+			break;
+			
+		case ("ZZMD30;"):
 			txMode = "RTTY";
 			rxMode = txMode;
 			break;
 			
-		case ("MD07;"):
-			txMode = "CW-R";
-			rxMode = txMode;
-			break;
-			
-		case ("MD08;"):
-			txMode = "DATA-L";
-			rxMode = txMode;
-			break;
-			
-		case ("MD09;"):
-			txMode = "RTTY-R";
-			rxMode = txMode;
-			break;
-			
-		case ("MD0A;"):
-			txMode = "DATA-FM";
-			rxMode = txMode;
-			break;
-			
-		case ("MD0B;"):
-			txMode = "FM-N";
-			rxMode = txMode;
-			break;
-			
-		case ("MD0C;"):
-			txMode = "DATA-U";
-			rxMode = txMode;
-			break;
-			
-		case ("MD0D;"):
-			txMode = "AM-N";
-			rxMode = txMode;
-			break;
-			
-		case ("MD0E;"):
-			txMode = "C4FM";
+		case ("ZZMD40;"):
+			txMode = "DSTR";
 			rxMode = txMode;
 			break;
 			
@@ -695,9 +699,19 @@ public class Radio {
         		}
         	}
         	else {
-        		// waiting for the radio initialization to tbe completed
-        		System.out.println("Waiting for radio initialization...");
-        		DisplayFrame.appendtext("Waiting for radio initialization...\n");
+        		// waiting for the radio initialization to be completed
+        		// print approximately once per minute
+        		
+        		if (initializeWaitCounter == 0) {
+	        		System.out.println("Waiting for radio initialization...");
+	        		DisplayFrame.appendtext("Waiting for radio initialization...\n");
+	        		// reset the waiting for initialize print counter
+	        		initializeWaitCounter = initializeWaitValue;
+        		}
+        		else {
+        			// decrement the wait counter
+        			--initializeWaitCounter;	 			
+        		}
         	}
         }
     }

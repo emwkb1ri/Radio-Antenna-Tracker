@@ -22,7 +22,7 @@ public class DisplayFrame extends JFrame{
 	static boolean runFlag = true;
 	static boolean swapflag = false;
 		
-	public DisplayFrame(){
+	public DisplayFrame(String ver){
 		
 		// Define the size of the frame
 		this.setSize(400, 430);
@@ -56,7 +56,7 @@ public class DisplayFrame extends JFrame{
 				
 		// Define the title for the frame
 				
-		this.setTitle("Flex Antenna Tracker v0.01");
+		this.setTitle("Flex Antenna Tracker" + ver);
 				
 		// The JPanel contains all of the components for your frame
 				

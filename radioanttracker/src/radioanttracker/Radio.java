@@ -522,23 +522,23 @@ public class Radio {
 		// or trailing ";"
 		afreqHz = afreq.substring(i, l - 1); 
 		afreqtenHz = afreq.substring(i, l - 2);
-
-		
-		// ********* may have to validate the VFO B actually exists or will this return slice B info?
 		
 		// if rxVfo or txVfo are not set to 1 - skip reading vfo B freq 
 		
 		String bfreq = "ZZFB00000100000;"; // set default freq of 100 kHz
 		String bfreqHz = "100000";
 		String bfreqtenHz = "10000";
+			
+		// get vfo B freq -- "ZZFB;"
+		sendSerial("ZZFB;");
 		
-		if (rxVfo == 1 || txVfo == 1) {
-			
-			// get vfo B freq -- "ZZFB;"
-			sendSerial("ZZFB;");
-			
-			bfreq = getSerial();
+		String temp = getSerial();
 
+		// ZZFB command returns "?;" if the Flex is not in split mode
+		// just leave vfoB set to the default defined above 
+		if (!temp.equals("?;")) {
+
+			bfreq = temp;
 			bfreqHz = bfreq;
 			bfreqtenHz = bfreq;
 			

@@ -14,6 +14,8 @@ package radioanttracker;
  * 			- modified for 11 digit Flex frequency string
  * 			- change the swap radio function to only act on VFO A
  * 			- changed how radioNr is determined - essentially based on each instance of Radio
+ * ver 0.02 - updated read vfoB routines in Radio class to detect "?;" return value when vfoB
+ * 				does not exist in the radio slice - Split mode not enabled
  * 
  */
 import java.util.*;
@@ -21,17 +23,7 @@ import java.io.*;
 import java.net.*;
 
 public class RadioAntTracker {
-	
-/*  not sure how to instantiate the radios for global program access
-	String radio1PortName = "COM13";
-	String radio2PortName = "COM15";
-	int baudrate = 38400; // default baud rate for now
-	
-    // instantiate the radio object
-	Radio radioOne = new Radio(radio1PortName, baud rate);
-	
-	Radio radioTwo = new Radio(radio2PortName, baud rate);
-*/
+	public static String verNum = "v0.02";  // increment this whenever appropriate
 	
 	// Initialize the current band to null to force the initial udp packet
 	// to be sent to set the antenna switch controller
@@ -61,7 +53,7 @@ public class RadioAntTracker {
 	
 	
 	// Instantiate the application window
-    public static DisplayFrame frame = new DisplayFrame();
+    public static DisplayFrame frame = new DisplayFrame(verNum);
 	
 	// Replace the PollRadioTask with updated version of Radio object
 	// These may be able to be moved inside of main depending on how tasks work

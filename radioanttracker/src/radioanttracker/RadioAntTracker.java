@@ -16,6 +16,8 @@ package radioanttracker;
  * 			- changed how radioNr is determined - essentially based on each instance of Radio
  * ver 0.02 - updated read vfoB routines in Radio class to detect "?;" return value when vfoB
  * 				does not exist in the radio slice - Split mode not enabled
+ * ver 0.03 - adding udp server to listen for reply packets from the switches and decoder
+ * 
  * 
  */
 import java.util.*;
@@ -23,7 +25,7 @@ import java.io.*;
 import java.net.*;
 
 public class RadioAntTracker {
-	public static String verNum = "v0.02";  // increment this whenever appropriate
+	public static String verNum = "v0.03";  // increment this whenever appropriate
 	
 	// Initialize the current band to null to force the initial udp packet
 	// to be sent to set the antenna switch controller
